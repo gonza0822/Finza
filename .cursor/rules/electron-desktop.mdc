@@ -1,0 +1,44 @@
+---
+description: Electron wraps Camino as a downloadable desktop app (Windows/macOS/Linux)
+alwaysApply: true
+---
+
+# Electron (desktop app)
+
+Camino se empaqueta como app de escritorio con **Electron**. Next.js sigue siendo el backend/web; Electron es un **shell nativo** que carga la app.
+
+## Stack
+
+- **Electron** (última estable en `devDependencies`) + **electron-builder** para instaladores.
+- Código del shell en **`electron/`** (`main.js`, `preload.js`) — CommonJS.
+- **No** mover lógica de negocio a Electron; auth, MySQL y Server Actions permanecen en Next.js.
+
+## Cómo funciona
+
+- En **dev**: `npm run electron:dev` abre Electron contra `AUTH_URL` / `http://localhost:3000` (correr `npm run dev` en paralelo).
+- En **prod empaquetada**: la ventana carga `CAMINO_APP_URL` (URL de Vercel). **Nunca** empaquetar con `localhost`.
+- Build: `$env:CAMINO_APP_URL="https://tu-app.vercel.app"; npm run electron:build` y subir el nuevo `.exe` al Release.
+- `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`. Enlaces externos → `shell.openExternal`.
+
+## Build y descarga
+
+```bash
+npm run electron:build
+```
+
+- Salida en **`dist/desktop/`** (NSIS `.exe` en Windows, etc.).
+- **No** subir el `.exe` a `public/` ni a Vercel (peso ~150MB + `*.exe` en `.gitignore`).
+- Publicar el instalador en **GitHub Releases** (o CDN) y definir en Vercel:
+  `NEXT_PUBLIC_DESKTOP_DOWNLOAD_URL=https://github.com/<user>/<repo>/releases/download/vX.Y.Z/Camino-Setup.exe`
+- El botón del sidebar (`AppDownloadButton`) elige Electron / Android / iOS según el dispositivo.
+
+## UI
+
+- Botón “Descargar app” en el sidebar (`DesktopDownloadButton`) — textos en `lib/content/app.ts`.
+- No mostrar el CTA cuando `window.caminoDesktop.isDesktop` es true (ya está en la app).
+
+## Qué no hacer
+
+- No instalar Express/Nest “por Electron”.
+- No poner secretos (`DATABASE_URL`, `AUTH_SECRET`) en el bundle de Electron.
+- No desactivar `contextIsolation` ni habilitar `nodeIntegration` en el renderer.

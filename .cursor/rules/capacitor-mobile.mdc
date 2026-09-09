@@ -1,0 +1,60 @@
+---
+description: Capacitor wraps Camino as Android/iOS apps — always use Capacitor for mobile shells
+alwaysApply: true
+---
+
+# Capacitor (mobile app)
+
+Para convertir Camino en app **Android / iOS** usar siempre **Capacitor**. Next.js sigue siendo el backend/web; Capacitor es el **shell nativo** (WebView) que carga la app.
+
+## Stack
+
+- **@capacitor/core**, **@capacitor/cli**, **@capacitor/android**, **@capacitor/ios** (última estable).
+- Config: **`capacitor.config.ts`** + placeholder en **`capacitor/www/`**.
+- URL de producción en **`capacitor/app-config.json`** (generada por `scripts/prepare-capacitor-config.mjs`).
+- **No** usar Cordova, React Native, Flutter ni Expo para este proyecto salvo decisión explícita documentada.
+
+## Cómo funciona
+
+- En **prod**: `server.url` apunta a `CAMINO_APP_URL` (Vercel). Auth, MySQL y Server Actions siguen en Next.js.
+- **Nunca** sincronizar/empaquetar con `localhost`.
+- Android: Android Studio (`npm run cap:open:android`).
+- iOS: requiere **macOS** + Xcode (`npm run cap:open:ios`).
+
+## Scripts
+
+```bash
+# PowerShell
+$env:CAMINO_APP_URL="https://tu-app.vercel.app"
+npm run cap:sync          # prepare + cap sync
+npm run cap:open:android  # Android Studio
+npm run cap:open:ios      # Xcode (macOS)
+```
+
+## Descarga (UI)
+
+- Botón del sidebar (`AppDownloadButton`): en **móvil** usa `NEXT_PUBLIC_ANDROID_DOWNLOAD_URL` / `NEXT_PUBLIC_IOS_DOWNLOAD_URL` (Play Store, App Store o APK en GitHub Releases).
+- En **desktop** sigue usando `NEXT_PUBLIC_DESKTOP_DOWNLOAD_URL` (Electron).
+- Ocultar el CTA si ya corre dentro de Capacitor (`Capacitor.isNativePlatform()`) o Electron.
+
+## Google OAuth en móvil
+
+Google **bloquea OAuth dentro de WebViews** (user agent con `; wv)`). En Capacitor:
+- `android.overrideUserAgent` / `ios.overrideUserAgent` → UA tipo Chrome/Safari.
+- `server.allowNavigation` incluye dominios de Google + host de Vercel.
+- Cookies de terceros habilitadas en `MainActivity`.
+
+## Logout en Android
+
+En WebView Android las cookies de sesión a veces **no se persisten borradas** al disco: el usuario ve `/login`, mata la app y al reabrir vuelve la cookie vieja → agenda autenticada.
+- Logout vía **`signOutClient`**: Auth.js + `CapacitorCookies.clearCookies` **solo del origin de Camino** (no `clearAllCookies`, para no borrar la sesión de Google y el listado de cuentas).
+- `MainActivity.onPause` → `CookieManager.flush()`; `onCreate(null)` para no restaurar stack viejo del WebView.
+
+El selector nativo de cuentas de Android (las del teléfono) **no aparece en WebView**: solo las cuentas con cookie de Google dentro del WebView. Para el picker del sistema haría falta Custom Tabs / navegador externo.
+
+## Qué no hacer
+
+- No mover lógica de negocio a plugins nativos innecesarios.
+- No poner secretos (`DATABASE_URL`, `AUTH_SECRET`) en el proyecto Android/iOS.
+- No reemplazar Capacitor por otra herramienta móvil sin documentarlo.
+- No llamar `signOut` de `next-auth/react` a pelo en móvil sin limpiar cookies nativas.

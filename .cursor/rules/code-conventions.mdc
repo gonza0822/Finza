@@ -1,0 +1,36 @@
+---
+description: Idioma del código y convenciones de nomenclatura (TS/React/Next)
+alwaysApply: true
+---
+
+# Idioma
+
+- **Código fuente**: identificadores, **comentarios**, mensajes de error internos y documentación técnica en **inglés**.
+- **Texto visible al usuario** (sitio en español): puede estar en **español**, centralizado en **`lib/content/`** (o equivalente) como datos — evitar mezclar español suelto dentro de la lógica; las **claves** de objetos y nombres de variables siguen en **inglés** (`heroTitle`, `practiceAreas`).
+
+## Nomenclatura (TypeScript / React / Next.js)
+
+| Estilo | Usar para | Ejemplos |
+|--------|-----------|----------|
+| **PascalCase** | Componentes React, nombres de tipos/interfaces públicos, enums | `SiteHeader`, `PracticeArea`, `type ContactPayload` |
+| **camelCase** | Variables, parámetros, funciones, métodos, hooks personalizados, props en objetos | `isMenuOpen`, `formatPhone`, `useReducedMotion` |
+| **kebab-case** | Segmentos de **ruta** bajo `app/` (carpetas que definen la URL), nombres de **archivos** que no son componentes cuando conviene legibilidad en URL | `app/quienes-somos/page.tsx`, `app/practice-areas/page.tsx` |
+| **UPPER_SNAKE_CASE** | Constantes de configuración inmutables y referencias a **env** en servidor | `MAX_UPLOAD_BYTES`, `process.env.RESEND_API_KEY` |
+| **snake_case** | **Evitar** en identificadores TS/JS. Reservado para coincidir con **respuestas JSON de APIs externas** si no podés mapear en el borde; mapear pronto a camelCase en tu dominio. |
+
+### Archivos
+
+- Componentes: **`PascalCase.tsx`** alineado con el export principal (`Hero.tsx`, `SiteFooter.tsx`).
+- Next convención: **`page.tsx`**, **`layout.tsx`**, **`loading.tsx`**, **`route.ts`** en minúsculas.
+- Utilidades y hooks: **`camelCase.ts`** (`cn.ts`, `useMediaQuery.ts`).
+- Segmentos de ruta con varias palabras: carpetas en **kebab-case** (`quienes-somos`, `practice-areas`).
+
+### Tailwind
+
+- Usar las **clases utilitarias** del framework tal cual; no inventar nombres propios para “CSS” salvo `@apply` acotado en `globals.css` si hace falta.
+
+### Tests (si se agregan)
+
+- Archivos `*.test.ts` / `*.test.tsx`; describe/it en inglés.
+
+Violations: no mezclar `snake_case` en nombres de componentes o funciones propias; no usar español en nombres de símbolos (`calcular` → `calculate`).

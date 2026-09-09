@@ -1,0 +1,33 @@
+---
+description: SEO — metadata, indexación, semántica y enlaces (Next.js App Router)
+alwaysApply: true
+---
+
+# SEO (Search Engine Optimization)
+
+Cada feature de UI o contenido debe **preservar o mejorar** la visibilidad en buscadores: HTML semántico, metadatos correctos y rendimiento (ya cubierto en `performance-responsive.mdc`).
+
+## Metadata (Next.js App Router)
+
+- Usar la API **`metadata`** / **`generateMetadata`** en `layout.tsx` y `page.tsx` por ruta: **`title`** único y descriptivo, **`description`** clara (≈150–160 caracteres útiles).
+- Definir **`openGraph`** y **`twitter`** cuando aplique (title, description, `locale`/tipo sitio).
+- **`robots`** explícito si una página **no** debe indexarse (`noindex, nofollow`).
+- Canonical: usar **`alternates.canonical`** cuando haya duplicación de URLs o versiones.
+
+## Indexación y archivos estándar
+
+- Mantener **`sitemap.ts`** (o equivalente App Router) actualizado al agregar rutas públicas.
+- **`robots.ts`** coherente con entorno (staging vs producción).
+
+## HTML semántico y contenido
+
+- Una sola **`<h1>`** por página; jerarquía **`h2` → `h3`** sin saltos arbitrarios.
+- Enlaces internos con **`<Link>`** de Next y texto **significativo** (evitar “click aquí” solo).
+- **`lang`** correcto en `<html>` (español para este sitio: `lang="es"`).
+- Imágenes con **`alt`** descriptivo (vacío solo si son decorativas).
+
+## Evitar
+
+- Títulos y descripciones duplicados entre páginas.
+- Contenido crítico solo dentro de **client-only** sin equivalente accesible al crawler cuando debiera indexarse.
+- Bloquear por error recursos o páginas que deban rankarse (`robots` / meta equivocados).

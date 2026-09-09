@@ -1,0 +1,72 @@
+---
+description: Motion, Recharts, TanStack Table y Sequelize — librerías obligatorias del stack
+alwaysApply: true
+---
+
+# Librerías obligatorias del stack
+
+Usar **exclusivamente** estas librerías para animaciones, gráficos, tablas, drag-and-drop y acceso a MySQL. No alternativas (Chart.js, Nivo, react-table legacy, react-beautiful-dnd, @hello-pangea/dnd, Mongoose, Prisma, Drizzle, TypeORM, driver `mysql` legado, etc.) salvo decisión explícita documentada.
+
+## Framer Motion (animaciones)
+
+- **Toda** animación de UI interactiva o transiciones de entrada/salida: **Framer Motion**.
+- Solo en **Client Components** (`"use client"`).
+- Animar **`transform`** y **`opacity`**; evitar `width`, `height`, `top`, `left`.
+- **`AnimatePresence`** solo cuando hagan falta exit animations.
+- No animar candidatos **LCP** (hero, imagen principal).
+- Respetar **`useReducedMotion`** / `prefers-reduced-motion`.
+- Colocar componentes animados en `components/` o `features/<name>/components/`.
+
+## Recharts (gráficos)
+
+- **Todo** gráfico o visualización de datos: **Recharts** (`recharts`).
+- Componente cliente dedicado por gráfico (ej. `features/stats/components/CompletedTasksLineChart.tsx`).
+- El **Server Component** padre obtiene los datos; el chart recibe **props tipadas**.
+- Carga pesada: **`dynamic(() => import(...), { ssr: false })`**.
+- Usar colores del tema Camino (`primary`, `cta`, `success`, `muted`) — no paletas por defecto de demos.
+- Responsive: `ResponsiveContainer` con altura definida en el contenedor padre.
+- No Chart.js, Nivo, Victory, ni `<canvas>` manual para charts.
+
+## TanStack Table (grillas)
+
+- **Toda** tabla con sorting, filtros, paginación o columnas dinámicas: **@tanstack/react-table**.
+- Componente cliente dedicado (ej. `features/data-grid/components/DataGrid.tsx`).
+- Datasets grandes: **server-side** pagination, sorting y filtering vía Route Handler → MySQL (`LIMIT`/`OFFSET` o cursor).
+- Estado de tabla (página actual, sort) en el componente o Redux si debe persistir entre rutas.
+- No `<table>` estático con lógica custom cuando TanStack Table cubre el caso; HTML semántico dentro de las celdas/filas que renderiza TanStack.
+
+## dnd-kit (drag and drop)
+
+- **Todo** reordenamiento, arrastre de listas/grillas o paneles movibles en el cliente: **@dnd-kit/core** + **@dnd-kit/sortable** (y **@dnd-kit/utilities** según haga falta).
+- Componentes cliente dedicados (ej. `features/stats/components/SortableChartCard.tsx`); activación con **PointerSensor** (`distance` razonable) y **KeyboardSensor** para accesibilidad.
+- Usar **asa de arrastre** (`drag handle`) separada de botones/inputs; no hacer toda la tarjeta draggable si tiene controles interactivos.
+- **Redimensionar** paneles o tarjetas: preferir **pointer events nativos** (como el panel de partidos) salvo que el caso exija otra cosa — no mezclar otras libs de resize con dnd-kit.
+- Persistir orden/layout en **localStorage** o servidor según el feature; hidratar en cliente para evitar mismatch SSR.
+- No **react-beautiful-dnd**, **@hello-pangea/dnd**, **react-dnd**, ni HTML5 DnD manual para UX de producto.
+
+## Patrón de composición
+
+```tsx
+// app/(dashboard)/estadisticas/page.tsx — Server Component
+export default async function StatsPage() {
+  const data = await getStatsData();
+  return <CompletedTasksLineChart data={data} />;
+}
+
+// features/stats/components/CompletedTasksLineChart.tsx — "use client"
+```
+
+Misma separación para grillas: página servidor → `DataGrid` cliente.
+
+## Sequelize (MySQL)
+
+- **Toda** conexión y acceso a MySQL: **Sequelize** (`sequelize`) + driver **`mysql2`**.
+- Conexión **singleton** en `lib/db/sequelize.ts`; modelos en `lib/db/models/`.
+- Queries desde `lib/services/` o `lib/repositories/` usando modelos Sequelize — no el driver `mysql2` a pelo salvo casos puntuales documentados.
+- Validación de filas en modelos Sequelize; entrada HTTP adicional con Zod en `lib/validators/` si aplica.
+- `DATABASE_URL` (o `MYSQL_*`) solo en servidor — nunca `NEXT_PUBLIC_*`.
+- **No** Mongoose, Prisma, Drizzle ni TypeORM.
+
+## Dependencias nuevas
+
+- No agregar librerías que solapen Motion, Recharts, TanStack Table, dnd-kit o Sequelize sin justificar peso y motivo en el PR/commit.

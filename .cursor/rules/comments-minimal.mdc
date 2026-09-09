@@ -1,0 +1,11 @@
+---
+description: Comentarios mínimos — una línea breve por función o método
+alwaysApply: true
+---
+
+# Comentarios
+
+- **No** comentar línea a línea ni explicar lo obvio.
+- **Sí:** un **comentario breve (una frase)** encima de cada **función** o **método** (y de **handlers** no triviales) indicando **qué hace** y, si aporta, el **porqué** en unas pocas palabras.
+- No duplicar lo que el nombre de la función ya dice. No bloques largos de JSDoc salvo API pública compartida que lo requiera.
+- Comentarios en **inglés** (alineado a `code-conventions`).

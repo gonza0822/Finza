@@ -1,0 +1,56 @@
+---
+description: Rendimiento (Core Web Vitals), responsive mobile-first, Next Image, Motion, TS, Vercel
+alwaysApply: true
+---
+
+# Rendimiento y responsive
+
+**Rendimiento es una feature.** Cada cambio debe considerar impacto en **LCP, CLS, INP** (Core Web Vitals).
+
+## Responsive
+
+- **Mobile-first**: estilos base para móvil; breakpoints Tailwind `sm:`, `md:`, `lg:`, `xl:` para pantallas mayores.
+- Toda la UI debe ser **totalmente responsive**.
+
+## Next.js (App Router)
+
+- **Server Components por defecto**; `"use client"` solo si hace falta (interactividad, hooks, Framer Motion).
+- Preferir **`fetch` con caché** en Server Components frente a llamadas equivalentes desde el cliente cuando aplique.
+- Usar **`loading.tsx`** y **`Suspense`** con skeletons cuando haya datos asíncronos.
+- **Layouts anidados** para compartir UI sin re-render innecesario en todo el árbol.
+- **`dynamic()`** con `ssr: false` solo para componentes pesados que **no** deban hidratarse en servidor.
+
+## Imágenes
+
+- **Solo** `next/image`, nunca `<img>` para contenido optimizado.
+- **`width`/`height`** explícitos, o **`fill`** dentro de un contenedor con tamaño definido → evitar **CLS**.
+- **`priority`** solo above the fold (hero / candidato LCP).
+- Preferir **WebP o AVIF** en `public/` cuando se exporten assets.
+- **`sizes`** acorde al layout real en cada breakpoint.
+
+## Tailwind
+
+- Mobile-first; evitar anchos fijos arbitrarios — preferir `w-full`, `max-w-*`, `min-w-*`.
+- Evitar `!important` y hacks; valores arbitrarios `[...]` con moderación.
+- Respetar **spacing y tipografía** del tema del proyecto.
+
+## Framer Motion
+
+- Solo en **Client Components**.
+- Animar preferentemente **`transform`** y **`opacity`** (no `width`/`height`/`top`/`left` — layout thrashing).
+- **`AnimatePresence`** solo cuando hagan falta exit animations.
+- No animar elementos que sean **candidatos LCP**.
+- Respetar **`useReducedMotion`** en mobile o cuando el usuario lo pida.
+
+## TypeScript
+
+- No usar **`any`**; usar **`unknown`** y narrowing.
+- Props de componentes tipadas con **`interface`** o **`type`**.
+- Tipar **`fetch`** y datos externos de forma explícita.
+
+## Deploy (Vercel + GitHub)
+
+- Sin **`console.log`** ruidoso en código que vaya a producción (depuración temporal solo en desarrollo).
+- Variables de entorno vía **`.env.local`** / dashboard Vercel; secretos no en cliente.
+- En features grandes, revisar **bundle** con **`@next/bundle-analyzer`** cuando corresponda.
+- Nueva dependencia = **justificación** (peso y mantenimiento).

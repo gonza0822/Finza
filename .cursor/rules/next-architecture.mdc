@@ -1,0 +1,84 @@
+---
+description: Arquitectura full-stack Next.js (App Router), MySQL, Redux — sin backend separado
+alwaysApply: true
+---
+
+# Arquitectura del proyecto (obligatoria)
+
+Stack fijo: **Next.js (App Router)**, **React**, **TypeScript**, **Tailwind CSS**, **MySQL**, **Redux Toolkit**, **Framer Motion**, **Recharts**, **TanStack Table**, **dnd-kit**. Escritorio: **Electron**. Móvil: **Capacitor** (Android/iOS; ver `capacitor-mobile.mdc`). Deploy web **Vercel**; imágenes con **`next/image`** y assets estáticos en **`public/`**.
+
+## Sin backend separado
+
+- **No** crear Express, Nest ni otro servidor Node aparte. Next.js **es** el backend.
+- API HTTP solo en **`app/api/**/route.ts`** (Route Handlers).
+- Mutaciones y formularios: **Server Actions** cuando aplique.
+- Lógica de negocio en **`lib/services/`** — sin dependencias de React.
+
+## Estructura de carpetas
+
+```
+app/                    # rutas, layouts, route handlers
+components/
+  layout/               # Header, Sidebar, shell
+  sections/             # bloques grandes por página
+  ui/                   # primitivas (Button, Input)
+features/               # dominio (reports, data-grid, auth…)
+  <feature>/
+    components/
+    hooks/
+    types.ts
+lib/
+  db/                   # Sequelize singleton + models
+  services/             # reglas de negocio
+  repositories/         # queries (opcional, recomendado si crece)
+  validators/           # schemas Zod
+store/                  # Redux Toolkit (slices, provider)
+types/
+```
+
+- Una carpeta por URL bajo **`app/`** (`page.tsx`, `layout.tsx`).
+- Agrupar rutas con route groups: `(auth)/`, `(dashboard)/`.
+- Contenido estático tipado en **`lib/`** o **`features/*/types.ts`**, no disperso en JSX.
+
+## Capas y flujo de datos
+
+```
+Page (Server Component)
+  → fetch / Server Action / Route Handler
+    → lib/services/
+      → lib/repositories/ o lib/db/models/
+        → MySQL (Sequelize)
+```
+
+| Capa | Ubicación | Responsabilidad |
+|------|-----------|-----------------|
+| UI | `app/`, `components/`, `features/` | presentación |
+| API | `app/api/**` | HTTP, auth, validación entrada |
+| Servicios | `lib/services/` | negocio (agnóstico de React) |
+| Datos | `lib/db/` | MySQL, Sequelize, queries |
+
+## Server vs Client Components
+
+- Por defecto: **Server Components**.
+- **`"use client"`** solo para: Redux, Framer Motion, Recharts, TanStack Table, dnd-kit, estado local complejo, listeners del navegador.
+- Extraer subcomponentes cliente en archivos dedicados si la página mezcla servidor + cliente.
+
+## Redux
+
+- **Solo** estado de UI global: sesión reflejada en cliente, tema, sidebar, filtros que persisten entre rutas, wizards.
+- **No** usar Redux como única fuente de datos de MySQL; preferir Server Components + fetch, **RTK Query** o **TanStack Query** para server state.
+- TanStack Table maneja estado local de grilla (sort, page, column visibility).
+
+## MySQL
+
+- Conexión y acceso **solo con Sequelize** (`lib/db/sequelize.ts` + `lib/db/models/`). Driver **`mysql2`**.
+- Conexión **singleton** (crítico en serverless).
+- Schema vía **migraciones** (`sequelize-cli`); no `sync({ force: true })` ni `alter: true` en producción.
+- Secretos (`DATABASE_URL`) solo en servidor — nunca `NEXT_PUBLIC_*`.
+- **No** usar MongoDB, Mongoose, Prisma, Drizzle ni TypeORM.
+
+## Qué no hacer
+
+- No mezclar **Pages Router** (`pages/`) con **App Router** (`app/`).
+- No poner lógica de negocio en componentes ni en route handlers sin pasar por services.
+- No introducir monorepo ni microservicios hasta que el proyecto lo exija explícitamente.
