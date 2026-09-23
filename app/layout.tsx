@@ -24,8 +24,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="es" className={`${ibmPlexSans.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col bg-background font-sans text-foreground">
+    <html lang="es" className={`${ibmPlexSans.variable} h-full overflow-x-clip antialiased`}>
+      <body className="flex min-h-full min-w-0 flex-col overflow-x-clip bg-background font-sans text-foreground">
         <StoreProvider>{children}</StoreProvider>
       </body>
     </html>

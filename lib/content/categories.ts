@@ -1,0 +1,16 @@
+export const categoriesContent = {
+  masTitle: "Más",
+  masBody: "Ajustes y listados de tu cuenta.",
+  categoriesLink: "Categorías",
+  categoriesLinkHint: "Las usás cuando registrás un movimiento.",
+  title: "Categorías",
+  metaTitle: "Categorías — Finza",
+  metaDescription: "Las categorías de gastos e ingresos de Finza.",
+  backToMas: "Volver a Más",
+  lead: "Cuando registres un movimiento, vas a elegir una de estas.",
+  pinLegend: "El punto marca el tipo: verde oscuro gastos, verde agua ingresos, naranja ajuste.",
+  groupGasto: "Gastos",
+  groupIngreso: "Ingresos",
+  groupAjuste: "Ajuste",
+  empty: "Todavía no hay categorías.",
+} as const;

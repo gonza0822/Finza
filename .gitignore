@@ -20,10 +20,11 @@
 *.dmg
 *.AppImage
 
-# env — keep .env.example tracked
+# env — keep .env.example and .env.aiven.example tracked
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+!.env.aiven.example
 
 # debug / logs
 npm-debug.log*
@@ -31,13 +32,22 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# tests
+# tests / browser automation
 /coverage
 /test-results/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
 .playwright-cli/
+playwright-report/
+playwright/.auth/
+**/auth.json
+
+# dumps and local DB files
+*.sql
+*.dump
+*.sqlite
+*.sqlite3
 
 # vercel
 .vercel
@@ -54,6 +64,7 @@ Thumbs.db
 
 # local scratch (not product)
 /notes/
+/*.png
 
-# Cursor skills (large; not required to run the app). Rules stay tracked.
-.cursor/skills/
+# Cursor (not required to run the app)
+.cursor/

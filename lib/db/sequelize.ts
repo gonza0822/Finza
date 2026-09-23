@@ -4,6 +4,21 @@ const globalForSequelize = globalThis as unknown as {
   sequelize: Sequelize | undefined;
 };
 
+/** TLS for hosted MySQL (Aiven); localhost stays plain. */
+function dialectOptions(databaseUrl: string) {
+  let host = "";
+  try {
+    host = new URL(databaseUrl).hostname;
+  } catch {
+    host = "";
+  }
+  const local = host === "localhost" || host === "127.0.0.1";
+  return {
+    charset: "utf8mb4",
+    ...(local ? {} : { ssl: { rejectUnauthorized: false } }),
+  };
+}
+
 function createSequelize(): Sequelize {
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
@@ -12,7 +27,13 @@ function createSequelize(): Sequelize {
 
   return new Sequelize(databaseUrl, {
     dialect: "mysql",
-    logging: process.env.NODE_ENV === "development" ? console.log : false,
+    logging: false,
+    dialectOptions: dialectOptions(databaseUrl),
+    define: {
+      underscored: true,
+      charset: "utf8mb4",
+      collate: "utf8mb4_unicode_ci",
+    },
   });
 }
 

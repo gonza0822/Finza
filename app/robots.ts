@@ -5,6 +5,19 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
+      disallow: [
+        "/login",
+        "/register",
+        "/dashboard",
+        "/inicio",
+        "/movimientos",
+        "/cuentas",
+        "/tarjetas",
+        "/planificacion",
+        "/metas",
+        "/proyeccion",
+        "/mas",
+      ],
     },
   };
 }

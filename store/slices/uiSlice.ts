@@ -17,11 +17,14 @@ const uiSlice = createSlice({
     toggleSidebar(state) {
       state.isSidebarOpen = !state.isSidebarOpen;
     },
+    setSidebarOpen(state, action: PayloadAction<boolean>) {
+      state.isSidebarOpen = action.payload;
+    },
     setAuthenticated(state, action: PayloadAction<boolean>) {
       state.isAuthenticated = action.payload;
     },
   },
 });
 
-export const { toggleSidebar, setAuthenticated } = uiSlice.actions;
+export const { toggleSidebar, setSidebarOpen, setAuthenticated } = uiSlice.actions;
 export const uiReducer = uiSlice.reducer;

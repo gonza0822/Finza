@@ -1,0 +1,18 @@
+export const onboardingContent = {
+  accountMetaTitle: "Tu primera cuenta — Finza",
+  accountMetaDescription: "Agregá una cuenta para ver tu plata en Finza.",
+  cardMetaTitle: "Tu tarjeta — Finza",
+  cardMetaDescription: "Podés agregar una tarjeta ahora o más tarde.",
+  recurrenceMetaTitle: "Un recurrente — Finza",
+  recurrenceMetaDescription: "Podés armar un sueldo, un alquiler o una suscripción, o seguir.",
+  stepOf: (step: number, total: number) => `Paso ${step} de ${total}`,
+  accountTitle: "Tu primera cuenta",
+  accountBody: "Con una cuenta ya ves cuánto hay. Después podés sumar tarjeta y recurrentes.",
+  cardTitle: "¿Tenés una tarjeta?",
+  cardBody: "Es opcional. Si la agregás, vas a ver el límite y la deuda en esa moneda.",
+  recurrenceTitle: "¿Algo que se repite?",
+  recurrenceBody: "Sueldo, alquiler, Netflix. También es opcional. Cada mes lo confirmás o lo omitís.",
+  skip: "Ahora no",
+  skipCardAria: "Saltar la tarjeta y seguir",
+  skipRecurrenceAria: "Saltar el recurrente e ir al inicio",
+} as const;

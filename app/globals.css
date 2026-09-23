@@ -1,12 +1,19 @@
 @import "tailwindcss";
 
 :root {
-  --background: #09090b;
-  --foreground: #fafafa;
-  --muted: #a1a1aa;
-  --surface: #18181b;
-  --cta: #2563eb;
-  --cta-hover: #1d4ed8;
+  --background: #f4f1ea;
+  --foreground: #143330;
+  --muted: #3a524f;
+  --surface: #fffcf7;
+  --primary: #174643;
+  --primary-hover: #123834;
+  --cta: #174643;
+  --cta-hover: #123834;
+  --teal-glow: #2a9d8f;
+  --warm: #e08a4a;
+  --cream: #f7f3ec;
+  --shadow-md: 0 4px 6px rgba(23, 70, 67, 0.08);
+  --shadow-lg: 0 16px 40px rgba(23, 70, 67, 0.12);
 }
 
 @theme inline {
@@ -14,14 +21,31 @@
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
   --color-surface: var(--surface);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
   --color-cta: var(--cta);
   --color-cta-hover: var(--cta-hover);
+  --color-teal-glow: var(--teal-glow);
+  --color-warm: var(--warm);
+  --color-cream: var(--cream);
   --font-sans: var(--font-ibm-plex-sans);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
+  background-image:
+    radial-gradient(900px 520px at 0% 0%, rgb(42 157 143 / 0.18), transparent 55%),
+    radial-gradient(720px 480px at 100% 10%, rgb(224 138 74 / 0.16), transparent 50%);
+  background-repeat: no-repeat;
   color: var(--foreground);
+}
+
+@media (min-width: 1024px) {
+  body {
+    background-attachment: fixed;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
