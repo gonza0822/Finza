@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Finza</string>
+    <string name="title_activity_main">Finza</string>
+    <string name="package_name">app.finza.mobile</string>
+    <string name="custom_url_scheme">app.finza.mobile</string>
+</resources>

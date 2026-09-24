@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Capacitor } from "@capacitor/core";
 import { Download } from "lucide-react";
 import { appShellContent } from "@/lib/content/app";
 
@@ -28,7 +29,7 @@ export function AppDownloadButton() {
   const [href, setHref] = useState("");
 
   useEffect(() => {
-    if (window.caminoDesktop?.isDesktop) {
+    if (window.caminoDesktop?.isDesktop || Capacitor.isNativePlatform()) {
       return;
     }
     setHref(resolveDownloadUrl());

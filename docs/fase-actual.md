@@ -1,9 +1,9 @@
 # Fase actual
 
-**Siguiente a hacer:** App de escritorio (Electron)
+**Siguiente a hacer:** App Android (Capacitor)
 
 **Estado:** en curso  
-**Último cierre:** Publicar — Aiven + Vercel (`https://finza-blond.vercel.app/`, confirmado)
+**Último cierre:** App de escritorio (Electron, confirmado)
 
 ## Hechas
 
@@ -25,6 +25,7 @@
 - 15 Proyección 1–6 meses
 - 16 Más / config y cierre MVP
 - Publicar: Aiven (`defaultdb`) + Vercel (`https://finza-blond.vercel.app/`)
+- App de escritorio (Electron + GitHub Release)
 
 ## Cómo actualizar
 

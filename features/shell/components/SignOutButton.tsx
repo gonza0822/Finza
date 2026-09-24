@@ -1,6 +1,6 @@
 "use client";
 
-import { signOutAction } from "@/lib/actions/auth";
+import { signOutClient } from "@/lib/auth/signOutClient";
 import { appShellContent } from "@/lib/content/app";
 import { useAppDispatch } from "@/store/hooks";
 import { clearMovementDraft } from "@/store/slices/movementDraftSlice";
@@ -16,23 +16,24 @@ const variantClass = {
     "border-primary text-primary hover:bg-cream focus-visible:ring-primary focus-visible:ring-offset-2",
 } as const;
 
-/** Ends the session via the existing server action. */
+/** Ends the session; on Android also flushes this origin's WebView cookies. */
 export function SignOutButton({ variant = "onDark" }: SignOutButtonProps) {
   const dispatch = useAppDispatch();
 
+  async function onLogout() {
+    dispatch(clearMovementDraft());
+    await signOutClient();
+  }
+
   return (
-    <form
-      action={signOutAction}
-      onSubmit={() => {
-        dispatch(clearMovementDraft());
+    <button
+      type="button"
+      onClick={() => {
+        void onLogout();
       }}
+      className={`cursor-pointer rounded-2xl border-2 px-4 py-2.5 text-sm font-semibold transition-colors duration-200 focus-visible:ring-2 focus-visible:outline-none ${variantClass[variant]}`}
     >
-      <button
-        type="submit"
-        className={`cursor-pointer rounded-2xl border-2 px-4 py-2.5 text-sm font-semibold transition-colors duration-200 focus-visible:ring-2 focus-visible:outline-none ${variantClass[variant]}`}
-      >
-        {appShellContent.logout}
-      </button>
-    </form>
+      {appShellContent.logout}
+    </button>
   );
 }

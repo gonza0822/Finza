@@ -18,6 +18,9 @@
 /dist/desktop
 electron/app-config.json
 *.exe
+*.apk
+*.aab
+*.idsig
 *.dmg
 *.AppImage
 
@@ -52,6 +55,15 @@ playwright/.auth/
 
 # vercel
 .vercel
+
+# Capacitor / Android / iOS build junk (the projects themselves stay tracked)
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+android/captures/
+ios/App/Pods/
+ios/App/build/
 
 # typescript
 *.tsbuildinfo
