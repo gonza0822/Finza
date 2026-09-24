@@ -22,6 +22,7 @@ Inicio, Movimientos, Cuentas, Tarjetas, Planificación, Metas, Proyección, Más
 - `next/link` only. `aria-current="page"` on the active item.
 - Active: `bg-cream/15`, no scale. Hover: `bg-cream/10`, `transition-colors duration-200`.
 - Logout lives in the sidebar footer (and on Más). Not a nav item.
+- Optional “Descargar app” above logout. Hidden inside the Electron window. Cream outline on the teal sidebar.
 
 ## Motion
 

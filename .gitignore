@@ -16,6 +16,7 @@
 /build
 /dist
 /dist/desktop
+electron/app-config.json
 *.exe
 *.dmg
 *.AppImage

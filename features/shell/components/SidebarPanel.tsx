@@ -3,6 +3,7 @@
 import { X } from "lucide-react";
 import { BrandWordmark } from "@/components/brand/BrandLogo";
 import { AppNavLinks } from "@/features/shell/components/AppNavLinks";
+import { AppDownloadButton } from "@/features/shell/components/AppDownloadButton";
 import { SignOutButton } from "@/features/shell/components/SignOutButton";
 import { appShellContent } from "@/lib/content/app";
 import type { RefObject } from "react";
@@ -73,6 +74,7 @@ export function SidebarPanel({
             {label}
           </p>
         ) : null}
+        <AppDownloadButton />
         <SignOutButton />
       </div>
     </div>

@@ -301,7 +301,7 @@
 
 | Cuando | Qué |
 | --- | --- |
-| Quieras publicar | Aiven + `DATABASE_URL` en Vercel + mismas migraciones |
+| Quieras publicar | Aiven + `DATABASE_URL` en Vercel + mismas migraciones (**hecho:** `https://finza-blond.vercel.app/`) |
 | El libro sea confiable | Planes, proyectos, simulador (V2) |
 | App nativa | Electron / Capacitor |
 

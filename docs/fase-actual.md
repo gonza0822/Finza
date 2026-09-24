@@ -1,9 +1,9 @@
 # Fase actual
 
-**Siguiente a hacer:** Publicar — Aiven (MySQL) + Vercel
+**Siguiente a hacer:** App de escritorio (Electron)
 
 **Estado:** en curso  
-**Último cierre:** 16 — Más / config y cierre MVP (confirmado)
+**Último cierre:** Publicar — Aiven + Vercel (`https://finza-blond.vercel.app/`, confirmado)
 
 ## Hechas
 
@@ -24,6 +24,7 @@
 - 14 Objetivos de ahorro
 - 15 Proyección 1–6 meses
 - 16 Más / config y cierre MVP
+- Publicar: Aiven (`defaultdb`) + Vercel (`https://finza-blond.vercel.app/`)
 
 ## Cómo actualizar
 

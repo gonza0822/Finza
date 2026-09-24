@@ -19,6 +19,7 @@ export const appShellContent = {
   menuDialog: "Menú",
   logout: "Cerrar sesión",
   signedInAs: "Sesión de",
+  downloadApp: "Descargar app",
 } as const;
 
 export const appPages = {

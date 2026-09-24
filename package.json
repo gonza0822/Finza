@@ -2,6 +2,7 @@
   "name": "finza",
   "version": "0.1.0",
   "private": true,
+  "main": "electron/main.js",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -10,7 +11,9 @@
     "db:migrate": "sequelize-cli db:migrate",
     "db:migrate:undo": "sequelize-cli db:migrate:undo",
     "db:seed": "sequelize-cli db:seed:all",
-    "db:aiven": "node scripts/db-aiven.cjs"
+    "db:aiven": "node scripts/db-aiven.cjs",
+    "electron:dev": "electron .",
+    "electron:build": "node scripts/write-electron-config.mjs && electron-builder --win nsis"
   },
   "dependencies": {
     "@auth/sequelize-adapter": "^2.11.3",
@@ -41,10 +44,34 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "electron": "^41.10.7",
+    "electron-builder": "^26.15.3",
     "eslint": "^9",
     "eslint-config-next": "16.3.4",
     "sequelize-cli": "^6.6.5",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "build": {
+    "appId": "app.finza.desktop",
+    "productName": "Finza",
+    "copyright": "Copyright © Finza",
+    "directories": {
+      "output": "dist/desktop"
+    },
+    "files": [
+      "electron/**/*"
+    ],
+    "win": {
+      "icon": "public/brand/logo-finza.png",
+      "target": [
+        "nsis"
+      ],
+      "artifactName": "Finza-Setup.exe"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
   }
 }
