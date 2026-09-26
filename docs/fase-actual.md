@@ -1,9 +1,9 @@
 # Fase actual
 
-**Siguiente a hacer:** App Android (Capacitor)
+**Siguiente a hacer:** A elección — iOS, V2 (planes / simulador) o usarla
 
-**Estado:** en curso  
-**Último cierre:** App de escritorio (Electron, confirmado)
+**Estado:** publicado + escritorio + Android  
+**Último cierre:** App Android (Capacitor, confirmado)
 
 ## Hechas
 
@@ -26,6 +26,7 @@
 - 16 Más / config y cierre MVP
 - Publicar: Aiven (`defaultdb`) + Vercel (`https://finza-blond.vercel.app/`)
 - App de escritorio (Electron + GitHub Release)
+- App Android (Capacitor + APK)
 
 ## Cómo actualizar
 

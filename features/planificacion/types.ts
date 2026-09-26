@@ -13,7 +13,9 @@ export interface PublicRecurrenceRule {
   kind: RecurrenceKind;
   ruleClass: RecurrenceClass;
   amountCents: number;
+  amountCurrency: Currency;
   currency: Currency;
+  estimatedLedgerCents: number | null;
   frequency: RecurrenceFrequency;
   dueDay: number;
   dueMonth: number | null;
@@ -35,6 +37,9 @@ export interface PublicRecurrenceOccurrence {
   kind: RecurrenceKind;
   scheduledOn: string;
   amountCents: number;
+  quotedAmountCents: number;
+  quotedCurrency: Currency;
+  convertsOnConfirm: boolean;
   status: RecurrenceOccurrenceStatus;
   displayStatus: RecurrenceOccurrenceStatus;
   accountName: string | null;
@@ -51,6 +56,7 @@ export interface RecurrenceFormState {
     kind?: string;
     ruleClass?: string;
     amount?: string;
+    amountCurrency?: string;
     frequency?: string;
     dueDay?: string;
     dueMonth?: string;
@@ -67,6 +73,7 @@ export interface RecurrenceFormValues {
   kind: RecurrenceKind;
   ruleClass: RecurrenceClass;
   amount: string;
+  amountCurrency: Currency;
   frequency: RecurrenceFrequency;
   dueDay: number;
   dueMonth: number;

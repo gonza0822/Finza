@@ -39,6 +39,19 @@ export const planificacionContent = {
   amountLabel: "Importe",
   amountPlaceholder: "0,00",
   amountHint: "Punto para los miles, coma para los centavos. Ej.: 15.000,00",
+  amountCurrencyLabel: "Moneda del importe",
+  amountCurrencies: {
+    ARS: "Pesos",
+    USD: "Dólares",
+  },
+  amountUsdHint:
+    "Al confirmar se pasa a pesos con el dólar oficial venta. Los impuestos del resumen van aparte.",
+  amountUsdEstimate: (pesos: string, venta: string) =>
+    `Hoy serían ${pesos} (oficial venta ${venta}).`,
+  quotedCaption: (quoted: string) => `Cargado: ${quoted}`,
+  ledgerEstimateCaption: (pesos: string) => `≈ ${pesos} al oficial venta`,
+  fxUnavailable:
+    "No pudimos leer el dólar oficial. Probá confirmar de nuevo en un momento.",
   frequencyLabel: "Cada cuánto",
   frequencies: {
     semanal: "Cada semana",
@@ -120,7 +133,9 @@ export const planificacionContent = {
     emptyKind: "Elegí si es gasto o ingreso.",
     emptyClass: "Elegí la clase.",
     emptyAmount: "Escribí el importe.",
+    emptyAmountCurrency: "Elegí si el importe está en pesos o en dólares.",
     invalidAmount: "Ese importe no parece un número.",
+    quoteCurrency: "Un importe en pesos no se puede cargar en una cuenta o tarjeta en dólares.",
     emptyFrequency: "Elegí cada cuánto se repite.",
     emptyDueDay: "Elegí el día.",
     emptyDueMonth: "Elegí el mes.",

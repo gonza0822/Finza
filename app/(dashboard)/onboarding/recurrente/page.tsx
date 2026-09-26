@@ -10,6 +10,7 @@ import { OnboardingStepHeader } from "@/features/onboarding/components/Onboardin
 import { listActiveCategories } from "@/lib/services/categoryService";
 import { listActiveCreditCards } from "@/lib/services/creditCardService";
 import { listActiveMoneyAccounts } from "@/lib/services/moneyAccountService";
+import { getOfficialUsdSellRateOrNull } from "@/lib/services/fxService";
 
 export const metadata: Metadata = {
   title: onboardingContent.recurrenceMetaTitle,
@@ -19,10 +20,11 @@ export const metadata: Metadata = {
 /** Optional first recurrence during setup. */
 export default async function OnboardingRecurrencePage() {
   const userId = await requireUserId();
-  const [accounts, cards, categories] = await Promise.all([
+  const [accounts, cards, categories, officialUsdSell] = await Promise.all([
     listActiveMoneyAccounts(userId),
     listActiveCreditCards(userId),
     listActiveCategories(),
+    getOfficialUsdSellRateOrNull(),
   ]);
   if (accounts.length === 0 && cards.length === 0) {
     redirect("/onboarding");
@@ -50,6 +52,7 @@ export default async function OnboardingRecurrencePage() {
             kind: "gasto",
             ruleClass: "otro",
             amount: "",
+            amountCurrency: "ARS",
             frequency: "mensual",
             dueDay,
             dueMonth,
@@ -60,6 +63,7 @@ export default async function OnboardingRecurrencePage() {
             startsOn: today,
             endsOn: "",
           }}
+          officialUsdSell={officialUsdSell}
           action={onboardingCreateRecurrenceAction}
         />
       </div>

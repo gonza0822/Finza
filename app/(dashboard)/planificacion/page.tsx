@@ -27,7 +27,7 @@ import type {
 export const metadata: Metadata = appPageMetadata("planificacion");
 
 interface PlanificacionPageProps {
-  searchParams: Promise<{ mes?: string; tab?: string }>;
+  searchParams: Promise<{ mes?: string; tab?: string; aviso?: string }>;
 }
 
 function monthFromParam(raw: string | undefined): string {
@@ -102,6 +102,15 @@ export default async function PlanificacionPage({ searchParams }: PlanificacionP
           </Link>
         ) : null}
       </div>
+
+      {params.aviso === "cambio" ? (
+        <p
+          role="alert"
+          className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+        >
+          {planificacionContent.fxUnavailable}
+        </p>
+      ) : null}
 
       <PlanningTabs tab={tab} yearMonth={yearMonth} />
       <MonthSwitcher yearMonth={yearMonth} tab={tab} />

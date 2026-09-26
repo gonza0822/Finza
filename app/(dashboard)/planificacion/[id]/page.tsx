@@ -10,6 +10,7 @@ import { RecurrenceRuleActions } from "@/features/planificacion/components/Recur
 import { listActiveCategories } from "@/lib/services/categoryService";
 import { listActiveCreditCards } from "@/lib/services/creditCardService";
 import { listActiveMoneyAccounts } from "@/lib/services/moneyAccountService";
+import { getOfficialUsdSellRateOrNull } from "@/lib/services/fxService";
 import { getRecurrenceRule } from "@/lib/services/recurrenceService";
 
 export const metadata: Metadata = {
@@ -25,11 +26,12 @@ interface EditRecurrenciaPageProps {
 export default async function EditRecurrenciaPage({ params }: EditRecurrenciaPageProps) {
   const { id } = await params;
   const userId = await requireUserId();
-  const [rule, accounts, cards, categories] = await Promise.all([
+  const [rule, accounts, cards, categories, officialUsdSell] = await Promise.all([
     getRecurrenceRule(userId, id),
     listActiveMoneyAccounts(userId),
     listActiveCreditCards(userId),
     listActiveCategories(),
+    getOfficialUsdSellRateOrNull(),
   ]);
   if (!rule) {
     notFound();
@@ -54,6 +56,7 @@ export default async function EditRecurrenciaPage({ params }: EditRecurrenciaPag
             kind: rule.kind,
             ruleClass: rule.ruleClass,
             amount: centsToInputValue(rule.amountCents),
+            amountCurrency: rule.amountCurrency,
             frequency: rule.frequency,
             dueDay: rule.dueDay,
             dueMonth: rule.dueMonth ?? 1,
@@ -64,6 +67,7 @@ export default async function EditRecurrenciaPage({ params }: EditRecurrenciaPag
             startsOn: rule.startsOn,
             endsOn: rule.endsOn ?? "",
           }}
+          officialUsdSell={officialUsdSell}
           action={updateRecurrenceRuleAction}
         />
       </div>

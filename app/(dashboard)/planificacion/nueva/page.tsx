@@ -11,6 +11,7 @@ import { RecurrenceForm } from "@/features/planificacion/components/RecurrenceFo
 import { listActiveCategories } from "@/lib/services/categoryService";
 import { listActiveCreditCards } from "@/lib/services/creditCardService";
 import { listActiveMoneyAccounts } from "@/lib/services/moneyAccountService";
+import { getOfficialUsdSellRateOrNull } from "@/lib/services/fxService";
 
 export const metadata: Metadata = {
   title: planificacionContent.newMetaTitle,
@@ -20,10 +21,11 @@ export const metadata: Metadata = {
 /** Create a repeating gasto or ingreso; confirm/omit happens on the month list. */
 export default async function NuevaRecurrenciaPage() {
   const userId = await requireUserId();
-  const [accounts, cards, categories] = await Promise.all([
+  const [accounts, cards, categories, officialUsdSell] = await Promise.all([
     listActiveMoneyAccounts(userId),
     listActiveCreditCards(userId),
     listActiveCategories(),
+    getOfficialUsdSellRateOrNull(),
   ]);
 
   if (accounts.length === 0 && cards.length === 0) {
@@ -67,6 +69,7 @@ export default async function NuevaRecurrenciaPage() {
             kind: "gasto",
             ruleClass: "otro",
             amount: "",
+            amountCurrency: "ARS",
             frequency: "mensual",
             dueDay,
             dueMonth,
@@ -77,6 +80,7 @@ export default async function NuevaRecurrenciaPage() {
             startsOn: today,
             endsOn: "",
           }}
+          officialUsdSell={officialUsdSell}
           action={createRecurrenceRuleAction}
         />
       </div>

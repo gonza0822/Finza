@@ -52,6 +52,13 @@ export function MonthOccurrenceList({ occurrences }: MonthOccurrenceListProps) {
                 {item.kind === "gasto" ? "−" : "+"}
                 {formatMoney(item.amountCents, currency)}
               </p>
+              {item.convertsOnConfirm || item.quotedCurrency !== item.currency ? (
+                <p className="text-xs text-muted">
+                  {planificacionContent.quotedCaption(
+                    formatMoney(item.quotedAmountCents, item.quotedCurrency),
+                  )}
+                </p>
+              ) : null}
               {item.canAct ? (
                 <div className="flex flex-wrap gap-2">
                   <form action={confirmOccurrenceAction}>

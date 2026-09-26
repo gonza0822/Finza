@@ -47,8 +47,16 @@ export function RecurrenceRuleList({ rules }: RecurrenceRuleListProps) {
               ) : null}
               <span className="block text-base font-semibold tabular-nums text-foreground">
                 {rule.kind === "gasto" ? "−" : "+"}
-                {formatMoney(rule.amountCents, rule.currency)}
+                {formatMoney(rule.amountCents, rule.amountCurrency)}
               </span>
+              {rule.estimatedLedgerCents !== null &&
+              rule.amountCurrency !== rule.currency ? (
+                <span className="block text-xs text-muted">
+                  {planificacionContent.ledgerEstimateCaption(
+                    formatMoney(rule.estimatedLedgerCents, rule.currency),
+                  )}
+                </span>
+              ) : null}
             </span>
           </Link>
         </li>

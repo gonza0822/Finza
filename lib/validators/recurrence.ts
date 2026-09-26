@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { isIsoCalendarDate } from "@/lib/dates/isoDate";
 import {
+  CURRENCIES,
   RECURRENCE_CLASSES,
   RECURRENCE_FREQUENCIES,
   RECURRENCE_KINDS,
@@ -37,6 +38,7 @@ const baseRule = {
   kind: z.enum(RECURRENCE_KINDS),
   ruleClass: z.enum(RECURRENCE_CLASSES),
   amount: positiveMoney,
+  amountCurrency: z.enum(CURRENCIES),
   startsOn: isoDate,
   endsOn: z
     .string()

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import type { ZodIssue } from "zod";
 import { requireUserId } from "@/lib/auth/requireUser";
 import { planificacionContent } from "@/lib/content/planificacion";
+import { OfficialUsdRateError } from "@/lib/services/fxService";
 import {
   RecurrenceAccountUnavailableError,
   RecurrenceCardUnavailableError,
@@ -13,6 +14,7 @@ import {
   RecurrenceLimitError,
   RecurrenceNotFoundError,
   RecurrenceOccurrenceClosedError,
+  RecurrenceQuoteCurrencyError,
   confirmOccurrence,
   createRecurrenceRule,
   deleteRecurrenceRule,
@@ -51,6 +53,8 @@ function mapFieldErrors(issues: ZodIssue[]): RecurrenceFormState["fieldErrors"] 
         issue.message === "invalid_money" || issue.code !== "too_small"
           ? planificacionContent.errors.invalidAmount
           : planificacionContent.errors.emptyAmount;
+    } else if (key === "amountCurrency") {
+      fieldErrors.amountCurrency = planificacionContent.errors.emptyAmountCurrency;
     } else if (key === "frequency") {
       fieldErrors.frequency = planificacionContent.errors.emptyFrequency;
     } else if (key === "dueDay") {
@@ -81,6 +85,7 @@ function payloadFromForm(formData: FormData) {
     kind,
     ruleClass: readString(formData, "ruleClass"),
     amount: readString(formData, "amount"),
+    amountCurrency: readString(formData, "amountCurrency") || "ARS",
     frequency,
     dueDay: readString(formData, "dueDay"),
     startsOn: readString(formData, "startsOn"),
@@ -131,6 +136,9 @@ function mapSaveError(error: unknown): RecurrenceFormState {
   }
   if (error instanceof RecurrenceNotFoundError) {
     return { error: planificacionContent.errors.notFound };
+  }
+  if (error instanceof RecurrenceQuoteCurrencyError) {
+    return { error: planificacionContent.errors.quoteCurrency };
   }
   return { error: planificacionContent.errors.generic };
 }
@@ -196,6 +204,10 @@ export async function confirmOccurrenceAction(formData: FormData): Promise<void>
     ) {
       revalidatePlanning();
       return;
+    }
+    if (error instanceof OfficialUsdRateError) {
+      revalidatePlanning();
+      redirect("/planificacion?aviso=cambio");
     }
     throw error;
   }

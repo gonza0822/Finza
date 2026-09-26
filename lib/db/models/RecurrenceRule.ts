@@ -1,5 +1,6 @@
 import { DataTypes, type Model, type ModelStatic, type Sequelize } from "sequelize";
 import {
+  CURRENCIES,
   RECURRENCE_CLASSES,
   RECURRENCE_FREQUENCIES,
   RECURRENCE_KINDS,
@@ -17,6 +18,11 @@ export function defineRecurrenceRule(sequelize: Sequelize): ModelStatic<Model> {
       kind: { type: DataTypes.ENUM(...RECURRENCE_KINDS), allowNull: false },
       ruleClass: { type: DataTypes.ENUM(...RECURRENCE_CLASSES), allowNull: false },
       amount: { type: DataTypes.DECIMAL(14, 2), allowNull: false },
+      amountCurrency: {
+        type: DataTypes.ENUM(...CURRENCIES),
+        allowNull: false,
+        defaultValue: "ARS",
+      },
       frequency: { type: DataTypes.ENUM(...RECURRENCE_FREQUENCIES), allowNull: false },
       dueDay: { type: DataTypes.TINYINT, allowNull: false },
       dueMonth: { type: DataTypes.TINYINT, allowNull: true },

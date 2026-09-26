@@ -3,13 +3,17 @@
 import { useActionState, useState, type FormEvent } from "react";
 import { AlertCircle } from "lucide-react";
 import {
+  CURRENCIES,
   RECURRENCE_CLASSES,
   RECURRENCE_FREQUENCIES,
   RECURRENCE_KINDS,
+  type Currency,
   type RecurrenceFrequency,
   type RecurrenceKind,
 } from "@/lib/db/enums";
 import { planificacionContent } from "@/lib/content/planificacion";
+import { formatAmountEsAr, formatMoney } from "@/lib/money/format";
+import { usdCentsToArsCents } from "@/lib/money/fx";
 import { centsToInputValue, parseMoneyToCents } from "@/lib/money/parse";
 import { FieldError } from "@/features/accounts/components/FieldError";
 import type { PublicMoneyAccount } from "@/features/accounts/types";
@@ -36,6 +40,7 @@ interface RecurrenceFormProps {
   cards: PublicCreditCard[];
   categories: PublicCategory[];
   defaults: RecurrenceFormValues;
+  officialUsdSell: number | null;
   action: (
     prev: RecurrenceFormState | undefined,
     formData: FormData,
@@ -50,6 +55,7 @@ export function RecurrenceForm({
   cards,
   categories,
   defaults,
+  officialUsdSell,
   action,
 }: RecurrenceFormProps) {
   const [state, formAction, pending] = useActionState(action, undefined);
@@ -59,12 +65,30 @@ export function RecurrenceForm({
     kind === "ingreso" ? "cuenta" : defaults.paidWith,
   );
   const [amount, setAmount] = useState(defaults.amount);
+  const [amountCurrency, setAmountCurrency] = useState<Currency>(defaults.amountCurrency);
+  const [accountId, setAccountId] = useState(defaults.accountId);
+  const [creditCardId, setCreditCardId] = useState(defaults.creditCardId);
   const [fieldErrors, setFieldErrors] = useState<
     NonNullable<RecurrenceFormState["fieldErrors"]>
   >({});
 
   const effectivePaid = kind === "ingreso" ? "cuenta" : paidWith;
   const kindCategories = categories.filter((item) => item.kind === kind);
+  const selectedAccount = accounts.find((item) => item.id === accountId);
+  const selectedCard = cards.find((item) => item.id === creditCardId);
+  const instrumentCurrency: Currency | null =
+    effectivePaid === "tarjeta"
+      ? (selectedCard?.currency ?? null)
+      : (selectedAccount?.currency ?? null);
+  const canQuoteUsd = instrumentCurrency === "ARS";
+  const effectiveAmountCurrency: Currency = canQuoteUsd
+    ? amountCurrency
+    : (instrumentCurrency ?? "ARS");
+  const amountCents = parseMoneyToCents(amount);
+  const estimateCents =
+    effectiveAmountCurrency === "USD" && officialUsdSell !== null && amountCents !== null
+      ? usdCentsToArsCents(amountCents, officialUsdSell)
+      : null;
 
   function clearField(field: keyof NonNullable<RecurrenceFormState["fieldErrors"]>) {
     setFieldErrors((current) => {
@@ -209,8 +233,18 @@ export function RecurrenceForm({
           className={`${fieldClass} ${fieldBorder(Boolean(errors.amount))}`}
         />
         <p id="amount-hint" className="text-sm text-muted">
-          {planificacionContent.amountHint}
+          {effectiveAmountCurrency === "USD"
+            ? planificacionContent.amountUsdHint
+            : planificacionContent.amountHint}
         </p>
+        {estimateCents !== null && officialUsdSell !== null ? (
+          <p className="text-sm text-muted">
+            {planificacionContent.amountUsdEstimate(
+              formatMoney(estimateCents, "ARS"),
+              formatAmountEsAr(Math.round(officialUsdSell * 100)),
+            )}
+          </p>
+        ) : null}
         {errors.amount ? <FieldError id="amount-error" message={errors.amount} /> : null}
       </div>
 
@@ -335,10 +369,13 @@ export function RecurrenceForm({
           <select
             id="accountId"
             name="accountId"
-            defaultValue={defaults.accountId}
+            value={accountId}
             disabled={pending}
             aria-invalid={Boolean(errors.accountId)}
-            onChange={() => clearField("accountId")}
+            onChange={(event) => {
+              setAccountId(event.target.value);
+              clearField("accountId");
+            }}
             className={`${fieldClass} ${fieldBorder(Boolean(errors.accountId))} cursor-pointer`}
           >
             <option value="">{planificacionContent.accountPlaceholder}</option>
@@ -359,10 +396,13 @@ export function RecurrenceForm({
           <select
             id="creditCardId"
             name="creditCardId"
-            defaultValue={defaults.creditCardId}
+            value={creditCardId}
             disabled={pending}
             aria-invalid={Boolean(errors.creditCardId)}
-            onChange={() => clearField("creditCardId")}
+            onChange={(event) => {
+              setCreditCardId(event.target.value);
+              clearField("creditCardId");
+            }}
             className={`${fieldClass} ${fieldBorder(Boolean(errors.creditCardId))} cursor-pointer`}
           >
             <option value="">{planificacionContent.cardPlaceholder}</option>
@@ -377,6 +417,41 @@ export function RecurrenceForm({
             <FieldError id="creditCardId-error" message={errors.creditCardId} />
           ) : null}
         </div>
+      )}
+
+      {canQuoteUsd ? (
+        <fieldset className="flex flex-col gap-2">
+          <legend className="text-sm font-medium text-foreground">
+            {planificacionContent.amountCurrencyLabel}
+          </legend>
+          <div className="grid grid-cols-2 gap-2">
+            {CURRENCIES.map((option) => (
+              <label
+                key={option}
+                className={`${choiceClass} border-primary/15 hover:bg-primary/5 has-[:checked]:border-primary has-[:checked]:bg-primary/10`}
+              >
+                <input
+                  type="radio"
+                  name="amountCurrency"
+                  value={option}
+                  checked={amountCurrency === option}
+                  disabled={pending}
+                  onChange={() => {
+                    setAmountCurrency(option);
+                    clearField("amountCurrency");
+                  }}
+                  className="accent-primary"
+                />
+                {planificacionContent.amountCurrencies[option]}
+              </label>
+            ))}
+          </div>
+          {errors.amountCurrency ? (
+            <FieldError id="amountCurrency-error" message={errors.amountCurrency} />
+          ) : null}
+        </fieldset>
+      ) : (
+        <input type="hidden" name="amountCurrency" value={effectiveAmountCurrency} />
       )}
 
       <div className="flex flex-col gap-1.5">

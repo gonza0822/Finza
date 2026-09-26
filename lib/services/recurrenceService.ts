@@ -9,10 +9,17 @@ import type {
   RecurrenceRuleStatus,
 } from "@/lib/db/enums";
 import { addYearMonths, localTodayIso, startOfYearMonth, yearMonthFromIso } from "@/lib/dates/isoDate";
+import type { Currency } from "@/lib/db/enums";
+import { usdCentsToArsCents } from "@/lib/money/fx";
 import { centsToDecimalString, decimalToCents } from "@/lib/money/parse";
 import { addMonthsIso, scheduledDatesInRange, startOfMonthIso } from "@/lib/recurrence/schedule";
 import { persistLedgerMovement } from "@/lib/services/movementService";
 import { findActiveOwnedCard, CreditCardNotFoundError } from "@/lib/services/creditCardService";
+import {
+  OfficialUsdRateError,
+  getOfficialUsdSellRate,
+  getOfficialUsdSellRateOrNull,
+} from "@/lib/services/fxService";
 import type { CreateRecurrenceRuleInput } from "@/lib/validators/recurrence";
 import type { CreateMovementInput } from "@/lib/validators/movement";
 import type {
@@ -73,6 +80,13 @@ export class RecurrenceOccurrenceClosedError extends Error {
   }
 }
 
+export class RecurrenceQuoteCurrencyError extends Error {
+  constructor() {
+    super("RECURRENCE_QUOTE_CURRENCY");
+    this.name = "RecurrenceQuoteCurrencyError";
+  }
+}
+
 interface RuleRow {
   id: string;
   userId: string;
@@ -80,6 +94,7 @@ interface RuleRow {
   kind: RecurrenceKind;
   ruleClass: RecurrenceClass;
   amount: string | number;
+  amountCurrency: Currency;
   frequency: RecurrenceFrequency;
   dueDay: number;
   dueMonth: number | null;
@@ -102,6 +117,7 @@ interface OccurrenceRow {
   status: RecurrenceOccurrenceStatus;
   movementId: string | null;
   rule?: RuleRow;
+  movement?: { amount: string | number } | null;
 }
 
 function isUuid(id: string): boolean {
@@ -129,14 +145,48 @@ function displayStatus(
   return status;
 }
 
-function toPublicRule(row: RuleRow): PublicRecurrenceRule {
+function instrumentCurrency(row: RuleRow): Currency {
+  return row.creditCard?.currency ?? row.moneyAccount?.currency ?? "ARS";
+}
+
+function quotedCurrency(row: RuleRow): Currency {
+  return row.amountCurrency ?? "ARS";
+}
+
+function convertsUsdToArs(amountCurrency: Currency, ledgerCurrency: Currency): boolean {
+  return amountCurrency === "USD" && ledgerCurrency === "ARS";
+}
+
+function ledgerCentsFromQuote(
+  quotedCents: number,
+  amountCurrency: Currency,
+  ledgerCurrency: Currency,
+  sellRate: number | null,
+): { cents: number; currency: Currency } {
+  if (!convertsUsdToArs(amountCurrency, ledgerCurrency)) {
+    return { cents: quotedCents, currency: ledgerCurrency };
+  }
+  if (sellRate === null) {
+    return { cents: quotedCents, currency: ledgerCurrency };
+  }
+  return { cents: usdCentsToArsCents(quotedCents, sellRate), currency: ledgerCurrency };
+}
+
+function toPublicRule(row: RuleRow, sellRate: number | null): PublicRecurrenceRule {
+  const quotedCents = decimalToCents(row.amount);
+  const amountCurrency = quotedCurrency(row);
+  const currency = instrumentCurrency(row);
+  const estimate = ledgerCentsFromQuote(quotedCents, amountCurrency, currency, sellRate);
   return {
     id: row.id,
     name: row.name,
     kind: row.kind,
     ruleClass: row.ruleClass,
-    amountCents: decimalToCents(row.amount),
-    currency: row.creditCard?.currency ?? row.moneyAccount?.currency ?? "ARS",
+    amountCents: quotedCents,
+    amountCurrency,
+    currency,
+    estimatedLedgerCents:
+      convertsUsdToArs(amountCurrency, currency) && sellRate === null ? null : estimate.cents,
     frequency: row.frequency,
     dueDay: row.dueDay,
     dueMonth: row.dueMonth,
@@ -152,25 +202,40 @@ function toPublicRule(row: RuleRow): PublicRecurrenceRule {
   };
 }
 
-function toPublicOccurrence(row: OccurrenceRow, today: string): PublicRecurrenceOccurrence {
+function toPublicOccurrence(
+  row: OccurrenceRow,
+  today: string,
+  sellRate: number | null,
+): PublicRecurrenceOccurrence {
   const scheduledOn = asIsoDate(row.scheduledOn);
   const status = row.status;
   const shown = displayStatus(status, scheduledOn, today);
   const rule = row.rule;
+  const quotedCents = decimalToCents(row.amount);
+  const amountCurrency = rule ? quotedCurrency(rule) : "ARS";
+  const ledgerCurrency = rule ? instrumentCurrency(rule) : "ARS";
+  const canAct = status === "programada" || shown === "vencida";
+  const booked =
+    status === "confirmada" && row.movement
+      ? { cents: decimalToCents(row.movement.amount), currency: ledgerCurrency }
+      : ledgerCentsFromQuote(quotedCents, amountCurrency, ledgerCurrency, sellRate);
   return {
     id: row.id,
     ruleId: row.recurrenceRuleId,
     ruleName: rule?.name ?? "",
     kind: rule?.kind ?? "gasto",
     scheduledOn,
-    amountCents: decimalToCents(row.amount),
+    amountCents: booked.cents,
+    quotedAmountCents: quotedCents,
+    quotedCurrency: amountCurrency,
+    convertsOnConfirm: canAct && convertsUsdToArs(amountCurrency, ledgerCurrency),
     status,
     displayStatus: shown,
     accountName: rule?.moneyAccount?.name ?? null,
     creditCardId: rule?.creditCardId ?? null,
     creditCardName: rule?.creditCard?.name ?? null,
-    currency: rule?.creditCard?.currency ?? rule?.moneyAccount?.currency ?? "ARS",
-    canAct: status === "programada" || shown === "vencida",
+    currency: booked.currency,
+    canAct,
   };
 }
 
@@ -178,7 +243,7 @@ async function findActiveOwnedAccount(
   userId: string,
   accountId: string,
   transaction: Transaction,
-) {
+): Promise<{ currency: Currency }> {
   const { MoneyAccount } = getModels();
   const account = await MoneyAccount.findOne({
     where: { id: accountId, userId, archivedAt: null },
@@ -187,6 +252,7 @@ async function findActiveOwnedAccount(
   if (!account) {
     throw new RecurrenceAccountUnavailableError();
   }
+  return { currency: account.get("currency") as Currency };
 }
 
 async function assertCategory(categoryId: string, kind: RecurrenceKind, transaction: Transaction) {
@@ -211,6 +277,7 @@ function payloadFromInput(userId: string, input: CreateRecurrenceRuleInput) {
     kind: input.kind,
     ruleClass: input.ruleClass,
     amount: input.amount,
+    amountCurrency: input.amountCurrency,
     frequency: input.frequency,
     dueDay: input.dueDay,
     dueMonth: input.frequency === "anual" ? input.dueMonth : null,
@@ -228,18 +295,24 @@ async function assertInstrument(
   transaction: Transaction,
 ) {
   await assertCategory(input.categoryId, input.kind, transaction);
+  let currency: Currency;
   if (input.paidWith === "tarjeta") {
     try {
-      await findActiveOwnedCard(userId, input.creditCardId, transaction);
+      const card = await findActiveOwnedCard(userId, input.creditCardId, transaction);
+      currency = card.currency;
     } catch (error: unknown) {
       if (error instanceof CreditCardNotFoundError) {
         throw new RecurrenceCardUnavailableError();
       }
       throw error;
     }
-    return;
+  } else {
+    const account = await findActiveOwnedAccount(userId, input.accountId, transaction);
+    currency = account.currency;
   }
-  await findActiveOwnedAccount(userId, input.accountId, transaction);
+  if (input.amountCurrency === "ARS" && currency === "USD") {
+    throw new RecurrenceQuoteCurrencyError();
+  }
 }
 
 /** Materializes missing programmed occurrences from this month through 12 months. */
@@ -319,15 +392,18 @@ function ruleIncludes() {
 /** Active and paused rules for the signed-in user (finished stay hidden). */
 export async function listRecurrenceRules(userId: string): Promise<PublicRecurrenceRule[]> {
   const { RecurrenceRule } = getModels();
-  const rows = await RecurrenceRule.findAll({
-    where: { userId, status: { [Op.ne]: "finalizada" } },
-    include: ruleIncludes(),
-    order: [
-      ["kind", "ASC"],
-      ["name", "ASC"],
-    ],
-  });
-  return rows.map((row) => toPublicRule(row.get({ plain: true }) as RuleRow));
+  const [rows, sellRate] = await Promise.all([
+    RecurrenceRule.findAll({
+      where: { userId, status: { [Op.ne]: "finalizada" } },
+      include: ruleIncludes(),
+      order: [
+        ["kind", "ASC"],
+        ["name", "ASC"],
+      ],
+    }),
+    getOfficialUsdSellRateOrNull(),
+  ]);
+  return rows.map((row) => toPublicRule(row.get({ plain: true }) as RuleRow, sellRate));
 }
 
 /** Occurrences in a calendar month after filling any missing dates. */
@@ -339,26 +415,30 @@ export async function listMonthOccurrences(
   const today = localTodayIso();
   const from = startOfYearMonth(yearMonth);
   const to = addMonthsIso(from, 1);
-  const { RecurrenceOccurrence, RecurrenceRule } = getModels();
-  const rows = await RecurrenceOccurrence.findAll({
-    where: {
-      scheduledOn: { [Op.gte]: from, [Op.lt]: to },
-    },
-    include: [
-      {
-        model: RecurrenceRule,
-        as: "rule",
-        required: true,
-        where: { userId, status: { [Op.ne]: "finalizada" } },
-        include: ruleIncludes(),
+  const { RecurrenceOccurrence, RecurrenceRule, Movement } = getModels();
+  const [rows, sellRate] = await Promise.all([
+    RecurrenceOccurrence.findAll({
+      where: {
+        scheduledOn: { [Op.gte]: from, [Op.lt]: to },
       },
-    ],
-    order: [
-      ["scheduledOn", "ASC"],
-      ["createdAt", "ASC"],
-    ],
-  });
-  return rows.map((row) => toPublicOccurrence(row.get({ plain: true }) as OccurrenceRow, today));
+      include: [
+        {
+          model: RecurrenceRule,
+          as: "rule",
+          required: true,
+          where: { userId, status: { [Op.ne]: "finalizada" } },
+          include: ruleIncludes(),
+        },
+        { model: Movement, attributes: ["amount"], required: false },
+      ],
+      order: [
+        ["scheduledOn", "ASC"],
+        ["createdAt", "ASC"],
+      ],
+    }),
+    getOfficialUsdSellRateOrNull(),
+  ]);
+  return rows.map((row) => toPublicOccurrence(row.get({ plain: true }) as OccurrenceRow, today, sellRate));
 }
 
 /** Active-rule occurrences from fromMonth through toMonth inclusive. */
@@ -371,26 +451,30 @@ export async function listOccurrencesInRange(
   const today = localTodayIso();
   const from = startOfYearMonth(fromMonth);
   const to = startOfYearMonth(addYearMonths(toMonth, 1));
-  const { RecurrenceOccurrence, RecurrenceRule } = getModels();
-  const rows = await RecurrenceOccurrence.findAll({
-    where: {
-      scheduledOn: { [Op.gte]: from, [Op.lt]: to },
-    },
-    include: [
-      {
-        model: RecurrenceRule,
-        as: "rule",
-        required: true,
-        where: { userId, status: "activa" },
-        include: ruleIncludes(),
+  const { RecurrenceOccurrence, RecurrenceRule, Movement } = getModels();
+  const [rows, sellRate] = await Promise.all([
+    RecurrenceOccurrence.findAll({
+      where: {
+        scheduledOn: { [Op.gte]: from, [Op.lt]: to },
       },
-    ],
-    order: [
-      ["scheduledOn", "ASC"],
-      ["createdAt", "ASC"],
-    ],
-  });
-  return rows.map((row) => toPublicOccurrence(row.get({ plain: true }) as OccurrenceRow, today));
+      include: [
+        {
+          model: RecurrenceRule,
+          as: "rule",
+          required: true,
+          where: { userId, status: "activa" },
+          include: ruleIncludes(),
+        },
+        { model: Movement, attributes: ["amount"], required: false },
+      ],
+      order: [
+        ["scheduledOn", "ASC"],
+        ["createdAt", "ASC"],
+      ],
+    }),
+    getOfficialUsdSellRateOrNull(),
+  ]);
+  return rows.map((row) => toPublicOccurrence(row.get({ plain: true }) as OccurrenceRow, today, sellRate));
 }
 
 /** One owned rule or null. */
@@ -413,7 +497,7 @@ export async function getRecurrenceRule(
   if (plain.status === "finalizada") {
     return null;
   }
-  return toPublicRule(plain);
+  return toPublicRule(plain, await getOfficialUsdSellRateOrNull());
 }
 
 /** Creates a rule and seeds its next 12 months of occurrences. */
@@ -574,17 +658,48 @@ async function setRuleStatus(
   }
 }
 
-/** Turns an occurrence into a ledger gasto/ingreso. */
+/** Turns an occurrence into a ledger gasto/ingreso (USD quotes settle in ARS at oficial venta). */
 export async function confirmOccurrence(userId: string, id: string): Promise<void> {
   if (!isUuid(id)) {
     throw new RecurrenceNotFoundError();
   }
+  const { RecurrenceOccurrence, RecurrenceRule } = getModels();
+  const preview = await RecurrenceOccurrence.findOne({
+    where: { id },
+    include: [
+      {
+        model: RecurrenceRule,
+        as: "rule",
+        required: true,
+        where: { userId },
+        include: ruleIncludes(),
+      },
+    ],
+  });
+  if (!preview) {
+    throw new RecurrenceNotFoundError();
+  }
+  const previewPlain = preview.get({ plain: true }) as OccurrenceRow;
+  const previewRule = previewPlain.rule;
+  if (!previewRule) {
+    throw new RecurrenceNotFoundError();
+  }
+  const needsFx = convertsUsdToArs(quotedCurrency(previewRule), instrumentCurrency(previewRule));
+  const sellRate = needsFx ? await getOfficialUsdSellRate() : null;
+
   const sequelize = getSequelize();
   await sequelize.transaction(async (transaction) => {
-    const { RecurrenceOccurrence, RecurrenceRule } = getModels();
     const found = await RecurrenceOccurrence.findOne({
       where: { id },
-      include: [{ model: RecurrenceRule, as: "rule", required: true, where: { userId } }],
+      include: [
+        {
+          model: RecurrenceRule,
+          as: "rule",
+          required: true,
+          where: { userId },
+          include: ruleIncludes(),
+        },
+      ],
       transaction,
       lock: Transaction.LOCK.UPDATE,
     });
@@ -603,7 +718,15 @@ export async function confirmOccurrence(userId: string, id: string): Promise<voi
     const scheduledOn = asIsoDate(found.get("scheduledOn") as string | Date);
     const today = localTodayIso();
     const occurredOn = scheduledOn <= today ? scheduledOn : today;
-    const amount = centsToDecimalString(decimalToCents(found.get("amount") as string | number));
+    const quotedCents = decimalToCents(found.get("amount") as string | number);
+    let ledgerCents = quotedCents;
+    if (convertsUsdToArs(quotedCurrency(ruleRow), instrumentCurrency(ruleRow))) {
+      if (sellRate === null) {
+        throw new OfficialUsdRateError();
+      }
+      ledgerCents = usdCentsToArsCents(quotedCents, sellRate);
+    }
+    const amount = centsToDecimalString(ledgerCents);
     const input = movementInput(ruleRow, amount, occurredOn, ruleRow.name);
     const created = await persistLedgerMovement(userId, input, transaction);
     await found.update(

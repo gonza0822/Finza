@@ -26,6 +26,7 @@ import {
   RecurrenceEndsBeforeStartError,
   RecurrenceLimitError,
   RecurrenceNotFoundError,
+  RecurrenceQuoteCurrencyError,
   createRecurrenceRule,
 } from "@/lib/services/recurrenceService";
 import { createMoneyAccountSchema } from "@/lib/validators/moneyAccount";
@@ -91,6 +92,7 @@ function recurrencePayload(formData: FormData) {
     kind,
     ruleClass: readString(formData, "ruleClass"),
     amount: readString(formData, "amount"),
+    amountCurrency: readString(formData, "amountCurrency") || "ARS",
     frequency,
     dueDay: readString(formData, "dueDay"),
     startsOn: readString(formData, "startsOn"),
@@ -218,6 +220,9 @@ export async function onboardingCreateRecurrenceAction(
     }
     if (error instanceof RecurrenceNotFoundError) {
       return { error: planificacionContent.errors.notFound };
+    }
+    if (error instanceof RecurrenceQuoteCurrencyError) {
+      return { error: planificacionContent.errors.quoteCurrency };
     }
     return { error: planificacionContent.errors.generic };
   }
